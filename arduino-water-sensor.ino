@@ -28,6 +28,8 @@ const String httpRequest = "GET / HTTP/1.1\n"
                            "Host: example.com\n"
                            "Connection: close\n\n";
 
+const int sensorPin = A0;
+
 // All functions called from setup() are defined below the
 // loop() function. They modularized to make it easier to
 // copy/paste into sketches of your own.
@@ -36,7 +38,6 @@ void setup()
   // Serial Monitor is used to control the demo and view
   // debug information.
   Serial.begin(9600);
-  serialTrigger(F("Press any key to begin."));
 
   // initializeESP8266() verifies communication with the WiFi
   // shield, and sets it up.
@@ -49,13 +50,19 @@ void setup()
   // and the network it's connected to.
   displayConnectInfo();
 
-  serialTrigger(F("Press any key to connect client."));
-  clientDemo();  
+  // Setup water sensor
+  pinMode(sensorPin, INPUT);
 }
 
 void loop() 
 {
-  // TODO Check the sensor voltage  
+  // Check the sensor voltage
+  if (digitalRead(sensorPin) == HIGH)
+    Serial.println("Sensor output: No Water");
+  else
+    // TODO logic to notify
+    Serial.println("Sensor output: Water!!");
+  delay(5000);
 }
 
 void initializeESP8266()
@@ -180,17 +187,4 @@ void errorLoop(int error)
   Serial.println(F("Looping forever."));
   for (;;)
     ;
-}
-
-// serialTrigger prints a message, then waits for something
-// to come in from the serial port.
-void serialTrigger(String message)
-{
-  Serial.println();
-  Serial.println(message);
-  Serial.println();
-  while (!Serial.available())
-    ;
-  while (Serial.available())
-    Serial.read();
 }
