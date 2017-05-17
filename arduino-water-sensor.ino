@@ -10,6 +10,8 @@ by Derek Lawless (https://github.com/flawless2011/arduino-water-sensor
 // using it).
 #include <SoftwareSerial.h> 
 #include <SparkFunESP8266WiFi.h>
+#include <AES.h>
+#include <Base64.h>
 
 //////////////////////////////
 // WiFi Network Definitions //
@@ -22,15 +24,23 @@ const char myPSK[] = "lawfulguests11";
 //////////////////
 // HTTP Strings //
 //////////////////
-const char destServer[] = "example.com";
+const char destServer[] = "gandalf";
 
-const String httpRequest = "GET / HTTP/1.1\n"
-                           "Host: example.com\n"
-                           "Connection: close\n\n";
+// TODO add real phone number here
+const char jsonString[] = "{\"toNumber\":\"\"}";
 
 const int sensorPin = A0;
 
-// All functions called from setup() are defined below the
+String httpRequest = "POST http://gandalf:8080/api/alerts HTTP/1.1\n"
+                     "Host: gandalf\n"
+                     "Connection: close\n"
+                     "Content-Type: application/json\n"
+                     "Content-Length: ";
+
+int waterDetected = 0;
+int contentLength = 0;
+
+// All functions called from setup() are defined below th/e
 // loop() function. They modularized to make it easier to
 // copy/paste into sketches of your own.
 void setup() 
@@ -52,17 +62,66 @@ void setup()
 
   // Setup water sensor
   pinMode(sensorPin, INPUT);
+  sendMessage(encryptMessage());
 }
 
 void loop() 
 {
   // Check the sensor voltage
-  if (digitalRead(sensorPin) == HIGH)
+  if (digitalRead(sensorPin) == HIGH) {
     Serial.println("Sensor output: No Water");
-  else
-    // TODO logic to notify
+    waterDetected = 0;
+  }
+  else {
     Serial.println("Sensor output: Water!!");
-  delay(5000);
+    if (waterDetected++ >= 5) {
+      waterDetected = 0;
+    }
+  }
+  delay(1000);
+}
+
+char* encryptMessage() {
+  // Encrypt JSON
+  AES aes;
+  byte cipher [4*N_BLOCK];
+  // TODO add real key here
+  byte key[] =
+  {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  };
+  byte my_iv[] =
+  {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+  };
+  byte iv [N_BLOCK];
+  byte succ = aes.set_key (key, 256);
+  for (byte i = 0 ; i < 16 ; i++) {
+      iv[i] = my_iv[i];
+  }
+  succ = aes.cbc_encrypt((byte*)jsonString, cipher, 2, iv);
+
+  // Base64 encode JSON
+  int inputLen = sizeof(cipher);
+  contentLength = base64_enc_len(inputLen);
+  char encoded[contentLength];
+
+  // note input is consumed in this step: it will be empty afterwards
+  base64_encode(encoded, cipher, inputLen);
+  return encoded;
+}
+
+void sendMessage(char* encoded) {
+  String json(encoded);
+  httpRequest += contentLength + 14;
+  httpRequest += "\n\n{\"payload\":\"";
+  httpRequest += json;
+  httpRequest += "\"}";
+  Serial.println(httpRequest);
+  // Attach to httpRequest String
+  // Send
+  makeHttpCall();
 }
 
 void initializeESP8266()
@@ -147,7 +206,7 @@ void displayConnectInfo()
   Serial.print(F("My IP: ")); Serial.println(myIP);
 }
 
-void clientDemo()
+void makeHttpCall()
 {
   // To use the ESP8266 as a TCP client, use the 
   // ESP8266Client class. First, create an object:
@@ -158,13 +217,12 @@ void clientDemo()
   // a specified port.
   // Returns: 1 on success, 2 on already connected,
   // negative on fail (-1=TIMEOUT, -3=FAIL).
-  int retVal = client.connect(destServer, 80);
+  int retVal = client.connect(destServer, 8080);
   if (retVal <= 0)
   {
     Serial.println(F("Failed to connect to server."));
     return;
   }
-
   // print and write can be used to send data to a connected
   // client connection.
   client.print(httpRequest);
