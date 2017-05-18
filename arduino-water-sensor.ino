@@ -24,6 +24,8 @@ const char myPSK[] = "lawfulguests11";
 //////////////////
 // HTTP Strings //
 //////////////////
+
+// TODO add real hostname here for node.js server
 const char destServer[] = "gandalf";
 
 // TODO add real phone number here
@@ -31,10 +33,10 @@ const char jsonString[] = "{\"toNumber\":\"\"}";
 
 const int sensorPin = A0;
 
-String httpRequest = "POST http://gandalf:8080/api/alerts HTTP/1.1\n"
-                     "Host: gandalf\n"
-                     "Connection: close\n"
-                     "Content-Type: application/json\n"
+String httpRequest = "POST /api/alerts HTTP/1.1\r\n"
+                     "Host: gandalf\r\n"
+                     "Connection: close\r\n"
+                     "Content-Type: application/json\r\n"
                      "Content-Length: ";
 
 int waterDetected = 0;
@@ -84,7 +86,7 @@ void loop()
 char* encryptMessage() {
   // Encrypt JSON
   AES aes;
-  byte cipher [4*N_BLOCK];
+  byte cipher [2*N_BLOCK];
   // TODO add real key here
   byte key[] =
   {
@@ -115,7 +117,7 @@ char* encryptMessage() {
 void sendMessage(char* encoded) {
   String json(encoded);
   httpRequest += contentLength + 14;
-  httpRequest += "\n\n{\"payload\":\"";
+  httpRequest += "\r\n\r\n{\"payload\":\"";
   httpRequest += json;
   httpRequest += "\"}";
   Serial.println(httpRequest);
@@ -220,7 +222,8 @@ void makeHttpCall()
   int retVal = client.connect(destServer, 8080);
   if (retVal <= 0)
   {
-    Serial.println(F("Failed to connect to server."));
+    Serial.print(F("Failed to connect to server. retVal="));
+    Serial.println(retVal);
     return;
   }
   // print and write can be used to send data to a connected
