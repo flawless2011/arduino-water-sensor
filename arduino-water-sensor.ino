@@ -79,6 +79,8 @@ void loop()
     if (waterDetected++ >= 5) {
       waterDetected = 0;
       sendMessage(encryptMessage());
+      // Wait 30 minutes before sending another message
+      delay(60000 * 30);
     }
   }
   delay(6000);
