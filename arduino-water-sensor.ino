@@ -64,7 +64,6 @@ void setup()
 
   // Setup water sensor
   pinMode(sensorPin, INPUT);
-  sendMessage(encryptMessage());
 }
 
 void loop() 
@@ -76,11 +75,13 @@ void loop()
   }
   else {
     Serial.println("Sensor output: Water!!");
+    // Only send a message if we've detected water 5 times in a row
     if (waterDetected++ >= 5) {
       waterDetected = 0;
+      sendMessage(encryptMessage());
     }
   }
-  delay(1000);
+  delay(6000);
 }
 
 char* encryptMessage() {
