@@ -33,11 +33,10 @@ const char jsonString[] = "{\"toNumber\":\"\"}";
 
 const int sensorPin = A0;
 
-String httpRequest = "POST /api/alerts HTTP/1.1\r\n"
-                     "Host: gandalf\r\n"
-                     "Connection: close\r\n"
-                     "Content-Type: application/json\r\n"
-                     "Content-Length: ";
+const String httpRequestT = "POST /api/alerts HTTP/1.1\r\n"
+                            "Host: gandalf\r\n"
+                            "Content-Type: application/json\r\n"
+                            "Content-Length: ";
 
 int waterDetected = 0;
 int contentLength = 0;
@@ -70,16 +69,17 @@ void loop()
 {
   // Check the sensor voltage
   if (digitalRead(sensorPin) == HIGH) {
-    Serial.println("Sensor output: No Water");
+    Serial.println(F("A0: No Water"));
     waterDetected = 0;
   }
   else {
-    Serial.println("Sensor output: Water!!");
+    Serial.println(F("A0: Water!!"));
     // Only send a message if we've detected water 5 times in a row
     if (waterDetected++ >= 5) {
       waterDetected = 0;
       sendMessage(encryptMessage());
       // Wait 30 minutes before sending another message
+      Serial.println(F("Sleeping for 30 minutes..."));
       delay(60000 * 30);
     }
   }
@@ -119,14 +119,47 @@ char* encryptMessage() {
 
 void sendMessage(char* encoded) {
   String json(encoded);
+  String httpRequest = "" + httpRequestT;
   httpRequest += contentLength + 14;
   httpRequest += "\r\n\r\n{\"payload\":\"";
   httpRequest += json;
   httpRequest += "\"}";
-  Serial.println(httpRequest);
   // Attach to httpRequest String
   // Send
-  makeHttpCall();
+  makeHttpCall(httpRequest);
+}
+
+void makeHttpCall(String httpRequest)
+{
+  // To use the ESP8266 as a TCP client, use the
+  // ESP8266Client class. First, create an object:
+  ESP8266Client client;
+
+  // ESP8266Client connect([server], [port]) is used to
+  // connect to a server (const char * or IPAddress) on
+  // a specified port.
+  // Returns: 1 on success, 2 on already connected,
+  // negative on fail (-1=TIMEOUT, -3=FAIL).
+  int retVal = client.connect(destServer, 8080);
+  if (retVal <= 0)
+  {
+    Serial.print(F("Failed to connect to server. retVal="));
+    Serial.println(retVal);
+    return;
+  }
+  // print and write can be used to send data to a connected
+  // client connection.
+  client.print(httpRequest);
+
+  // available() will return the number of characters
+  // currently in the receive buffer.
+  while (client.available())
+    Serial.write(client.read()); // read() gets the FIFO char
+
+  // connected() is a boolean return value - 1 if the
+  // connection is active, 0 if it's closed.
+  if (client.connected())
+    client.stop(); // stop() closes a TCP connection.
 }
 
 void initializeESP8266()
@@ -209,39 +242,6 @@ void displayConnectInfo()
   // ESP8266's current local IP address.
   IPAddress myIP = esp8266.localIP();
   Serial.print(F("My IP: ")); Serial.println(myIP);
-}
-
-void makeHttpCall()
-{
-  // To use the ESP8266 as a TCP client, use the 
-  // ESP8266Client class. First, create an object:
-  ESP8266Client client;
-
-  // ESP8266Client connect([server], [port]) is used to 
-  // connect to a server (const char * or IPAddress) on
-  // a specified port.
-  // Returns: 1 on success, 2 on already connected,
-  // negative on fail (-1=TIMEOUT, -3=FAIL).
-  int retVal = client.connect(destServer, 8080);
-  if (retVal <= 0)
-  {
-    Serial.print(F("Failed to connect to server. retVal="));
-    Serial.println(retVal);
-    return;
-  }
-  // print and write can be used to send data to a connected
-  // client connection.
-  client.print(httpRequest);
-
-  // available() will return the number of characters
-  // currently in the receive buffer.
-  while (client.available())
-    Serial.write(client.read()); // read() gets the FIFO char
-  
-  // connected() is a boolean return value - 1 if the 
-  // connection is active, 0 if it's closed.
-  if (client.connected())
-    client.stop(); // stop() closes a TCP connection.
 }
 
 // errorLoop prints an error code, then loops forever.
