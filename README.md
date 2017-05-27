@@ -1,10 +1,11 @@
-## Arduino Water Sensor
-This project includes Arduino sketch code required to run an Arduino water sensor system. This system continuously monitors output from a SST Liquid Level Switch and notifies the configured phone number via SMS message if the sensor reports water.
+## Arduino Sump Well Water Sensor
+This project includes Arduino sketch code required to run an Arduino water sensor system. This system continuously monitors output from a SST Liquid Level Switch and notifies the configured phone number via SMS message if the sensor reports water. The T-shaped PVC housing holds the water sensor and allows it to sit on top of the sump well cover and dip down in.
 
 ![Image of completed rig](images/IMG_20170526_132824.jpg)
 
 ### Hardware Components
 * #### Arduino Uno R3
+* #### [Arduino Enclosure](https://www.sparkfun.com/products/12838)
 * #### [SparkFun ESP8266 Wifi Shield](https://www.sparkfun.com/products/13287)
 * #### [SST Liquid Level Switch LLC200D3SH-LLPK1](https://www.sparkfun.com/products/13835)
 * #### 1" PVC, T connector
