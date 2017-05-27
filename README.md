@@ -1,5 +1,6 @@
 ## Arduino Water Sensor
 This project includes code required to run an Arduino water sensor system.
+![Image of completed rig](images/IMG_20170526_132824.jpg)
 
 ### Components
 #### Arduino Uno R3
